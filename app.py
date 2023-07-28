@@ -27,6 +27,57 @@ Session(app)
 # Fixes some stuff when running on localhost
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
+@app.route('/chPhase', methods=['POST'])
+def change_phase():
+    phase = request.get_json()
+    if phase is not None:
+        try:
+            project_id = int(phase['id'])
+            #kellene egy adatbázis lekérdezés, hogy megkapjuk a projekt adatait a project_id alapján
+            project = helpers.project.get_project_by_id(project_id)
+            if project is not None:
+                #kellene egy adatbázis lekérdezés, hogy megkapjuk a projekt fázisát a project_id alapján
+                phase = helpers.phase.get_phase_for_project(project_id)
+                if phase is not None:
+                    phase.join_start = phase['join_start']
+                    phase.join_end = phase['join_end']
+                    phase.event_start = phase['event_start']
+                    phase.event_end = phase['event_end']
+                    update_phase(phase_id=phase.phase_id, join_start=phase.join_start, join_end=phase.join_end, event_start=phase.event_start, event_end=phase.event_end)
+                    return jsonify({"message": "Phase updated"}), 200,
+                else:
+                    return jsonify({"error": "Phase not found"}), 404
+            else:
+                return jsonify({"error": "Project ID not found"}), 404
+        except ValueError:
+            return jsonify({"error": "Invalid Project ID"}), 400
+
+
+@app.route('/getPhase', methods=['GET'])
+def get_phase():
+    project_id = request.args.get('id')
+    if project_id is not None:
+        try:
+            project_id = int(project_id)
+            #kellene egy adatbázis lekérdezés, hogy megkapjuk a projekt adatait a project_id alapján
+            project = helpers.project.get_project_by_id(project_id)
+            if project is not None:
+                phase = helpers.project.get_phase_for_project(project_id)
+    
+                return jsonify({
+                    "id": project_id,
+                    "join_start": phase.join_start,
+                    "join_end": phase.join_end,
+                    "event_start": phase.event_start,
+                    "event_end": phase.event_end,
+                }), 200
+            else:
+                return jsonify({"error": "Project ID not found"}), 404
+        except ValueError:
+            return jsonify({"error": "Invalid Project ID"}), 400
+    else:
+        return jsonify({"error": "Project ID parameter is missing"}), 400
+
 @app.route('/getProjectStats', methods=['GET'])
 def get_projects():
     parsed = []
@@ -95,3 +146,5 @@ def get_egg_qr(egg_id):
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5052, debug=True)
+
+
