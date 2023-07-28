@@ -80,16 +80,37 @@ def change_phase():
 
 
 """
-end point: " /getJoining "
+end point: " /getGeneral "
 
 Server sending ==>
 
 {
-    "title": "Decoding Atlantis",
-    "body": "plain text",
-    "footer": "Csatlakoz",
+    "id": 1,
+    "title": "Project title",
+    "max_team_num": 5,
+    "num_of_members": 3,
 }
 """
+
+@app.route('/getGeneral', methods=['GET'])
+def get_general():
+    project_id = request.args.get('id')
+    if project_id is not None:
+        try:
+            project_id = int(project_id)
+            #kellene egy adatbázis lekérdezés, hogy megkapjuk a projekt adatait a project_id alapján
+            project = helpers.project.get_project_by_id(project_id)
+            if project is not None:
+                return jsonify({
+                    "id": project_id,
+                    "name": project.name,
+                    "max_team_num": project.max_team_num,
+                    "num_of_members": project.num_of_members,
+                }), 200
+            else:
+                return jsonify({"error": "Project ID not found"}), 404
+        except ValueError:
+            return jsonify({"error": "Invalid Project ID"}), 400
 
 @app.route('/getJoining', methods=['GET'])
 def get_joining():
@@ -115,7 +136,6 @@ def get_joining():
             return jsonify({"error": "Invalid Project ID"}), 400
     else:
         return jsonify({"error": "Project ID parameter is missing"}), 400
-
 
 @app.route('/chJoining', methods=['POST'])
 def change_joining():
