@@ -22,6 +22,9 @@ def get_all_designs():
 def get_design_by_id(design_id):
     return session.query(Design).filter_by(design_id=design_id).first()
 
+def get_design_for_project(project_id):
+    return session.query(Design).filter_by(project_id=project_id).first()
+
 def update_design(design_id, header_text, bg_img_url, base_color1, base_color2, base_color3, team_color1, team_color2, team_color3):
     design = get_design_by_id(design_id)
     if design:

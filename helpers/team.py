@@ -7,8 +7,8 @@ def create_team(team_name, project_id):
     return team
 
 # Read all teams
-def get_all_teams():
-    return session.query(Team).all()
+def get_all_teams_in_project(project_id):
+    return session.query(Team).filter_by(project_id=project_id).all()
 
 # Read a team by team_id
 def get_team_by_id(team_id):
