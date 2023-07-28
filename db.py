@@ -21,6 +21,7 @@ class Project(Base):
 
     project_id = Column(String(36), primary_key=True, default=str(uuid.uuid4))
     name = Column(String)
+    leaderboard_url = Column(String)
     num_of_groups = Column(Integer)
     num_of_members = Column(Integer)
     teams = relationship('Team', back_populates='project')
