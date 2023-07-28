@@ -31,15 +31,16 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 def get_projects():
     parsed = []
     for project in helpers.project.get_all_projects():
+        top3 = helpers.leaderboard.get_top3(project.project_id)
         project_data = {
             'project_id': project.project_id,
             'name': project.name,
             'state': helpers.phase.get_current_phase(project.project_id),
             'max_team_num': project.max_team_num,
             'current_team_num': len(project.teams),
-            'first': 'majd lesz valami',
-            'second': 'majd lesz valami',
-            'third': 'majd lesz valami',
+            'first': top3[0].team_name if len(top3) > 0 else None,
+            'second': top3[1].team_name if len(top3) > 1 else None,
+            'third': top3[2].team_name if len(top3) > 2 else None,
         }
         parsed.append(project_data)
     return jsonify({'projects': parsed})
@@ -64,7 +65,8 @@ def get_egg(egg_id):
     if request.method == 'GET':
         return "nem"
     elif request.method == 'POST':
-        team = helpers.team.get_team_by_val_code(request.form['val_code'])
+        data = request.get_json()
+        team = helpers.team.get_team_by_val_code(data.get('val_code'))
         if not team:
             return "Code error"
         if not helpers.egg.check_egg_valid(egg_id):
