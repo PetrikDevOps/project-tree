@@ -187,6 +187,18 @@ def change_design():
             'color3': design.base_color3,
         }
 
+@app.route('/getTeams/<project_id>', methods=['GET'])
+def get_teams(project_id):
+    teams = helpers.team.get_all_teams_in_project(project_id)
+    parsed = []
+    for team in teams:
+        parsed.append({
+            'team_name': team.team_name,
+            'id': team.team_id,
+            'color': team.color
+        })
+    return jsonify({'teams': parsed})
+
 #p = helpers.project.create_project('test', 10, 5, 'https://google.com')
 #from datetime import datetime
 #join_start = datetime(2023, 7, 28, 8, 0, 0)   # Replace with your desired join start time
