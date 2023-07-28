@@ -1,6 +1,7 @@
 import random
 import uuid
 
+from datetime import datetime
 from sqlalchemy import (Boolean, Column, DateTime, ForeignKey, Integer, String,
                         Table, create_engine)
 from sqlalchemy.ext.declarative import declarative_base
@@ -32,6 +33,7 @@ class Project(Base):
     design = relationship('Design', uselist=False, back_populates='project')
     joining_page = relationship('JoiningPage', uselist=False, back_populates='project')
     tasks = relationship('Task', back_populates='project')
+    eggs = relationship('Egg', back_populates='project')
 
 class Team(Base):
     __tablename__ = 'teams'
@@ -42,7 +44,7 @@ class Team(Base):
     project_id = Column(String(36), ForeignKey('projects.project_id'))
     project = relationship('Project', back_populates='teams')
     team_members = relationship('User', secondary='team_memberships')
-    validation_code = Column(String, default=lambda: str(random.randint(100,999)))
+    validation_code = Column(String, default=lambda: str(random.randint(10000,99999)))
     found_eggs = relationship('Egg', secondary='egg_teamships', back_populates='found_by_teams')
 
 team_memberships = Table('team_memberships', Base.metadata,
@@ -78,10 +80,13 @@ class Egg(Base):
     __tablename__ = 'eastereggs'
 
     egg_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    egg_name = Column(String)
+    name = Column(String)
+    riddle = Column(String)
     project_id = Column(String(36), ForeignKey('projects.project_id'))
     project = relationship('Project', back_populates='eggs')
     found_by_teams = relationship('Team', secondary='egg_teamships')
+    valid_from = Column(DateTime)
+    valid_until = Column(DateTime)
 
 egg_teamships = Table('egg_teamships', Base.metadata,
     Column('egg_id', String(36), ForeignKey('eastereggs.egg_id')),

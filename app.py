@@ -56,6 +56,36 @@ def get_projects():
         parsed.append(project_data)
     return jsonify({'projects': parsed})
 
+
+@app.route('/eggs', methods=['GET'])
+def get_eggs():
+    parsed = []
+    for egg in helpers.egg.get_all_eggs():
+        egg_data = {
+            'egg_id': egg.egg_id,
+            'egg_name': egg.egg_name,
+            'project_id': egg.project_id,
+            'valid_until': egg.valid_until,
+        }
+        parsed.append(egg_data)
+    return jsonify({'eggs': parsed})
+
+@app.route('/egg/<egg_id>', methods=['GET', 'POST'])
+def get_egg(egg_id):
+    if request.method == 'GET':
+        return "nem"
+    elif request.method == 'POST':
+        team = helpers.team.get_team_by_val_code(request.form['val_code'])
+        if not team:
+            return "Code error"
+        if not helpers.egg.check_egg_valid(egg_id):
+            return "Egg not valid"
+        helpers.egg.team_found_egg(team.team_id, egg_id)
+    
+
+
+
+
 #p = helpers.project.create_project('test', 10, 5, 'https://google.com')
 #from datetime import datetime
 #join_start = datetime(2023, 7, 28, 8, 0, 0)   # Replace with your desired join start time
