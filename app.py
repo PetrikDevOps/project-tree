@@ -105,6 +105,7 @@ def get_eggs():
             'egg_id': egg.egg_id,
             'egg_name': egg.egg_name,
             'project_id': egg.project_id,
+            'riddle': egg.riddle,
             'valid_until': egg.valid_until,
         }
         parsed.append(egg_data)
@@ -123,6 +124,24 @@ def get_egg(egg_id):
         if not helpers.egg.check_egg_valid(egg_id):
             return "Egg not valid"
         helpers.egg.team_found_egg(team.team_id, egg_id)
+
+
+@app.route('/chEgg', methods=['POST'])
+def change_egg():
+    data = request.get_json()
+    oegg = helpers.egg.get_egg_by_id(data.get('egg_id'))
+    if not oegg:
+        return "Egg not found"
+    
+    egg = helpers.egg.update_egg_riddle(oegg.egg_id, data.get('riddle'))
+    if not egg:
+        return "Riddle update failed"
+    return {
+            'egg_id': egg.egg_id,
+            'egg_name': egg.egg_name,
+            'project_id': egg.project_id,
+            'riddle': egg.riddle,
+            'valid_until': egg.valid_until,}
 
 
 @app.route('/genEggQR/<egg_id>', methods=['GET'])
