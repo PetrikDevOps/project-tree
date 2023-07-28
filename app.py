@@ -39,5 +39,22 @@ def logout():
     session.pop('logged_in', None)
     return jsonify({'message': 'Logout successful!'})
 
+@app.route('/projects', methods=['GET'])
+def get_projects():
+    projects_raw = helpers.project.get_all_projects()
+    print(projects_raw)
+    projects = {
+        "project_id": project_id,
+        "name": name,
+        "state": state,
+        "max_group_num": max_group_num,
+        "current_group_num": current_group_num,
+        "first": first,
+        "second": second,
+        "third": third
+    }
+    return jsonify({'projects': [project.serialize for project in projects]})
+
+
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5052, debug=True)

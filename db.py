@@ -22,11 +22,13 @@ class Project(Base):
     project_id = Column(String(36), primary_key=True, default=str(uuid.uuid4))
     name = Column(String)
     leaderboard_url = Column(String)
-    num_of_groups = Column(Integer)
+    max_group_num = Column(Integer)
     num_of_members = Column(Integer)
     teams = relationship('Team', back_populates='project')
     phases = relationship('Phase', back_populates='project')
     design = relationship('Design', uselist=False, back_populates='project')
+    joining_page = relationship('JoiningPage', uselist=False, back_populates='project')
+    tasks = relationship('Task', back_populates='project')
 
 class Team(Base):
     __tablename__ = 'teams'
@@ -75,7 +77,7 @@ class JoiningPage(Base):
     page_body = Column(String)
     page_footer = Column(String)
     project_id = Column(String(36), ForeignKey('projects.project_id'))
-    project = relationship('Project', back_populates='phases')
+    project = relationship('Project', back_populates='joining_page')
 
 class Task(Base):
     __tablename__ = 'tasks'
@@ -87,24 +89,18 @@ class Task(Base):
     task_start = Column(DateTime)
     task_end = Column(DateTime)
     project_id = Column(String(36), ForeignKey('projects.project_id'))
-    project = relationship('Project', back_populates='phases')
+    project = relationship('Project', back_populates='tasks')
+    points = relationship('Points', back_populates='task')
 
 class Points(Base):
     __tablename__ = 'points'
-
 
     points_id = Column(String(36), primary_key=True, default=str(uuid.uuid4))
     task_id = Column(String(36), ForeignKey('tasks.task_id'))
     team_id = Column(String(36), ForeignKey('teams.team_id'))
     points = Column(Integer)
 
-    project_id = Column(String(36), ForeignKey('projects.project_id'))
-    project = relationship('Project', back_populates='phases')
-
-
-# Update the relationships in the Project and User models
-Project.phases = relationship('Phase', back_populates='project')
-Project.design = relationship('Design', uselist=False, back_populates='project')
+    task = relationship('Task', back_populates='points')
 
 # Create the tables in the database
 Base.metadata.create_all(engine)
