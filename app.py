@@ -105,6 +105,7 @@ def get_eggs():
             'egg_id': egg.egg_id,
             'egg_name': egg.egg_name,
             'project_id': egg.project_id,
+            'riddle': egg.riddle,
             'valid_until': egg.valid_until,
         }
         parsed.append(egg_data)
@@ -125,6 +126,24 @@ def get_egg(egg_id):
         helpers.egg.team_found_egg(team.team_id, egg_id)
 
 
+@app.route('/chEgg', methods=['POST'])
+def change_egg():
+    data = request.get_json()
+    oegg = helpers.egg.get_egg_by_id(data.get('egg_id'))
+    if not oegg:
+        return "Egg not found"
+    
+    egg = helpers.egg.update_egg_riddle(oegg.egg_id, data.get('riddle'))
+    if not egg:
+        return "Riddle update failed"
+    return {
+            'egg_id': egg.egg_id,
+            'egg_name': egg.egg_name,
+            'project_id': egg.project_id,
+            'riddle': egg.riddle,
+            'valid_until': egg.valid_until,}
+
+
 @app.route('/genEggQR/<egg_id>', methods=['GET'])
 def get_egg_qr(egg_id):
     img = helpers.egg.create_qr_img(egg_id)
@@ -132,9 +151,41 @@ def get_egg_qr(egg_id):
         return "Not a valid egg id"
     return send_file(img, mimetype='image/png')
 
+@app.route('/getDesign/<project_id>', methods=['GET'])
+def get_design(project_id):
+    design = helpers.design.get_design_by_project_id(project_id)    
+    teams = helpers.team.get_all_teams_in_project(project_id)
+    teams_parsed = []
+    for team in teams:
+        teams_parsed.append({
+            'team_name': team.team_name,
+            'id': team.team_id,
+            'color': team.color
+        })
+    parsed = {
+            'header': design.header_text,
+            'bg_img': design.bg_img_url,
+            'color1': design.base_color1,
+            'color2': design.base_color2,
+            'color3': design.base_color3,
+            'teams': teams_parsed
+        }
+    
+    return jsonify(parsed)
 
-
-
+@app.route('/chDesign', methods=['POST'])
+def change_design():
+    data = request.get_json()
+    design = helpers.design.update_design(helpers.design.get_design_for_project(data.get('project_id')), data.get('header'), data.get('bg_img'), data.get('color1'), data.get('color2'), data.get('color3'))
+    if not design:
+        return "Design update failed"
+    return {
+            'header': design.header_text,
+            'bg_img': design.bg_img_url,
+            'color1': design.base_color1,
+            'color2': design.base_color2,
+            'color3': design.base_color3,
+        }
 
 #p = helpers.project.create_project('test', 10, 5, 'https://google.com')
 #from datetime import datetime
