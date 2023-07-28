@@ -80,9 +80,9 @@ def change_phase():
 
 
 """
-end point: " /getGeneral "
+end point: " /chGeneral "
 
-Server sending ==>
+Server waiting ==>
 
 {
     "id": 1,
@@ -91,6 +91,25 @@ Server sending ==>
     "num_of_members": 3,
 }
 """
+
+@app.route('/chGeneral', methods=['POST'])
+def change_general():
+    project = request.get_json()
+    if project is not None:
+        try:
+            project_id = int(project['id'])
+            #kellene egy adatbázis lekérdezés, hogy megkapjuk a projekt adatait a project_id alapján
+            project = helpers.project.get_project_by_id(project_id)
+            if project is not None:
+                project.name = project['title']
+                project.max_team_num = project['max_team_num']
+                project.num_of_members = project['num_of_members']
+                helpers.project.update_project(project_id=project_id, name=project.name, max_team_num=project.max_team_num, num_of_members=project.num_of_members)
+                return jsonify({"message": "Project updated"}), 200,
+            else:
+                return jsonify({"error": "Project ID not found"}), 404
+        except ValueError:
+            return jsonify({"error": "Invalid Project ID"}), 400
 
 @app.route('/getGeneral', methods=['GET'])
 def get_general():
