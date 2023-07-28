@@ -1,7 +1,7 @@
 import importlib
 import os
 
-from flask import Flask, render_template, jsonify, request, session
+from flask import Flask, render_template, jsonify, request, session, send_file
 from flask_cors import CORS
 from flask_session import Session
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -27,19 +27,7 @@ Session(app)
 # Fixes some stuff when running on localhost
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-
-@app.route('/login', methods=['GET'])
-def login():
-    session['logged_in'] = True
-    return jsonify({'message': 'Login successful!'})
-
-@app.route('/logout', methods=['GET'])
-def logout():
-    # Clear the 'logged_in' flag from the session
-    session.pop('logged_in', None)
-    return jsonify({'message': 'Logout successful!'})
-
-@app.route('/projects', methods=['GET'])
+@app.route('/getProjectStats', methods=['GET'])
 def get_projects():
     parsed = []
     for project in helpers.project.get_all_projects():
@@ -57,7 +45,7 @@ def get_projects():
     return jsonify({'projects': parsed})
 
 
-@app.route('/eggs', methods=['GET'])
+@app.route('/getAllEggs', methods=['GET'])
 def get_eggs():
     parsed = []
     for egg in helpers.egg.get_all_eggs():
@@ -70,6 +58,7 @@ def get_eggs():
         parsed.append(egg_data)
     return jsonify({'eggs': parsed})
 
+
 @app.route('/egg/<egg_id>', methods=['GET', 'POST'])
 def get_egg(egg_id):
     if request.method == 'GET':
@@ -81,7 +70,15 @@ def get_egg(egg_id):
         if not helpers.egg.check_egg_valid(egg_id):
             return "Egg not valid"
         helpers.egg.team_found_egg(team.team_id, egg_id)
-    
+
+
+@app.route('/genEggQR/<egg_id>', methods=['GET'])
+def get_egg_qr(egg_id):
+    img = helpers.egg.create_qr_img(egg_id)
+    if not img:
+        return "Not a valid egg id"
+    return send_file(img, mimetype='image/png')
+
 
 
 
