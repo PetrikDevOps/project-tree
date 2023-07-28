@@ -1,7 +1,7 @@
 import importlib
 import os
 
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify, request, session
 from flask_cors import CORS
 from flask_session import Session
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -28,14 +28,16 @@ Session(app)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 
-@app.route('/')
-def index():
-    return "faszom"
+@app.route('/login', methods=['GET'])
+def login():
+    session['logged_in'] = True
+    return jsonify({'message': 'Login successful!'})
 
-@app.route('/fasz')
-def fasz():
-    return render_template('fasz.html')
-
+@app.route('/logout', methods=['GET'])
+def logout():
+    # Clear the 'logged_in' flag from the session
+    session.pop('logged_in', None)
+    return jsonify({'message': 'Logout successful!'})
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5052, debug=True)
