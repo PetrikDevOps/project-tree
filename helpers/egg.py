@@ -1,0 +1,43 @@
+from db import *
+from sqlalchemy.orm.exc import NoResultFound
+import helpers.team
+import qrcode
+
+# Function to create a new egg
+def create_egg(name, project_id, valid_from, valid_until, riddle):
+    new_egg = Egg(name=name, project_id=project_id, valid_from=valid_from, valid_until=valid_until, riddle=riddle)
+    session.add(new_egg)
+    session.commit()
+    return new_egg
+
+# Function to read (retrieve) an egg by its ID
+def get_egg_by_id(egg_id):
+    try:
+        return session.query(Egg).filter_by(egg_id=egg_id).one()
+    except NoResultFound:
+        return None
+
+# Function to update an existing egg's name
+def update_egg_riddle(egg_id, new_name):
+    egg = get_egg_by_id(session, egg_id)
+    if egg:
+        egg.riddle = new_name
+        session.commit()
+        return egg
+    return None
+
+def check_egg_valid(egg):
+    if egg.valid_until and egg.valid_until < datetime.now():
+        return True
+    return False
+
+def team_found_egg(team_id, egg_id):
+    team = session.query(Team).get(team_id)
+    egg = session.query(Egg).get(egg_id)
+
+    team.found_eggs.append(egg)
+    session.commit()
+    return True
+
+def create_qr_img(egg_id):
+    return qrcode.make('Some data here') 

@@ -4,3 +4,5 @@ flask_cors
 sqlalchemy
 gunicorn
 bcrypt
+qrcode[pil]
+Pillow

@@ -14,6 +14,9 @@ def get_all_teams():
 def get_team_by_id(team_id):
     return session.query(Team).filter_by(team_id=team_id).first()
 
+def get_team_by_val_code(validation_code):
+    return session.query(Team).filter_by(validation_code=validation_code).first()
+
 # Update a team by team_id
 def update_team(team_id, team_name):
     team = get_team_by_id(team_id)
