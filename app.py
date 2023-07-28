@@ -1,14 +1,14 @@
 import importlib
 import os
 
-from flask import Flask, render_template, jsonify, request, session
+from flask import Flask, render_template, jsonify, request, session, redirect, url_for, flash
 from flask_cors import CORS
 from flask_session import Session
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 import config
 import helpers
-from helpers.phase import get_phase_for_project
+from helpers.phase import get_phase_for_project, update_phase
 
 from helpers.project import get_project_by_id
 
@@ -30,6 +30,47 @@ Session(app)
 # Fixes some stuff when running on localhost
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
+
+"""
+end point: " /chPhase "
+
+Server waiting for phase object ==>
+than saves it to the db
+{
+    "id": "{project_id}",
+    "join_start": "2021-04-01T00:00:00+02:00",
+    "join_end": "2021-04-30T23:59:59+02:00",
+    "event_start": "2021-05-01T00:00:00+02:00",
+    "event_end": "2021-05-31T23:59:59+02:00",
+}
+"""
+
+@app.route('/chPhase', methods=['POST'])
+def change_phase():
+    phase = request.get_json()
+    if phase is not None:
+        try:
+            project_id = int(phase['id'])
+            #kellene egy adatbázis lekérdezés, hogy megkapjuk a projekt adatait a project_id alapján
+            project = get_project_by_id(project_id)
+            if project is not None:
+                #kellene egy adatbázis lekérdezés, hogy megkapjuk a projekt fázisát a project_id alapján
+                phase = get_phase_for_project(project_id)
+                if phase is not None:
+                    phase.join_start = phase['join_start']
+                    phase.join_end = phase['join_end']
+                    phase.event_start = phase['event_start']
+                    phase.event_end = phase['event_end']
+                    update_phase(phase_id=phase.phase_id, join_start=phase.join_start, join_end=phase.join_end, event_start=phase.event_start, event_end=phase.event_end)
+                    return jsonify({"message": "Phase updated"}), 200,
+                else:
+                    return jsonify({"error": "Phase not found"}), 404
+            else:
+                return jsonify({"error": "Project ID not found"}), 404
+        except ValueError:
+            return jsonify({"error": "Invalid Project ID"}), 400
+
+
 @app.route('/getPhase', methods=['GET'])
 def get_phase():
     project_id = request.args.get('id')
@@ -39,12 +80,14 @@ def get_phase():
             #kellene egy adatbázis lekérdezés, hogy megkapjuk a projekt adatait a project_id alapján
             project = get_project_by_id(project_id)
             if project is not None:
+                phase = get_phase_for_project(project_id)
+    
                 return jsonify({
                     "id": project_id,
-                    "join_start": project.join_start,
-                    "join_end": project.join_end,
-                    "event_start": project.event_start,
-                    "event_end": project.event_end,
+                    "join_start": phase.join_start,
+                    "join_end": phase.join_end,
+                    "event_start": phase.event_start,
+                    "event_end": phase.event_end,
                 }), 200
             else:
                 return jsonify({"error": "Project ID not found"}), 404
