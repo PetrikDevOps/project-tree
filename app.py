@@ -43,7 +43,7 @@ def change_phase():
                     phase.join_end = phase['join_end']
                     phase.event_start = phase['event_start']
                     phase.event_end = phase['event_end']
-                    update_phase(phase_id=phase.phase_id, join_start=phase.join_start, join_end=phase.join_end, event_start=phase.event_start, event_end=phase.event_end)
+                    helpers.phase.update_phase(phase_id=phase.phase_id, join_start=phase.join_start, join_end=phase.join_end, event_start=phase.event_start, event_end=phase.event_end)
                     return jsonify({"message": "Phase updated"}), 200,
                 else:
                     return jsonify({"error": "Phase not found"}), 404
