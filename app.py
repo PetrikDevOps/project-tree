@@ -1,7 +1,7 @@
 import importlib
 import os
 
-from flask import Flask
+from flask import Flask, render_template
 from flask_cors import CORS
 from flask_session import Session
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -31,6 +31,10 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 @app.route('/')
 def index():
     return "faszom"
+
+@app.route('/fasz')
+def fasz():
+    return render_template('fasz.html')
 
 
 if __name__ == '__main__':
