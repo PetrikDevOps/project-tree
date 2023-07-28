@@ -1,7 +1,7 @@
 from db import *
 
-def create_project(name, num_of_groups, num_of_members, leaderboard_url):
-    project = Project(name=name, num_of_groups=num_of_groups, num_of_members=num_of_members, leaderboard_url=leaderboard_url)
+def create_project(name, max_team_num, num_of_members, leaderboard_url):
+    project = Project(name=name, max_team_num=max_team_num, num_of_members=num_of_members, leaderboard_url=leaderboard_url)
     session.add(project)
     session.commit()
     return project

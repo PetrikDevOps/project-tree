@@ -41,20 +41,28 @@ def logout():
 
 @app.route('/projects', methods=['GET'])
 def get_projects():
-    projects_raw = helpers.project.get_all_projects()
-    print(projects_raw)
-    projects = {
-        "project_id": project_id,
-        "name": name,
-        "state": state,
-        "max_group_num": max_group_num,
-        "current_group_num": current_group_num,
-        "first": first,
-        "second": second,
-        "third": third
-    }
-    return jsonify({'projects': [project.serialize for project in projects]})
+    parsed = []
+    for project in helpers.project.get_all_projects():
+        project_data = {
+            'project_id': project.project_id,
+            'name': project.name,
+            'state': helpers.phase.get_current_phase(project.project_id),
+            'max_team_num': project.max_team_num,
+            'current_team_num': len(project.teams),
+            'first': 'majd lesz valami',
+            'second': 'majd lesz valami',
+            'third': 'majd lesz valami',
+        }
+        parsed.append(project_data)
+    return jsonify({'projects': parsed})
 
+#p = helpers.project.create_project('test', 10, 5, 'https://google.com')
+#from datetime import datetime
+#join_start = datetime(2023, 7, 28, 8, 0, 0)   # Replace with your desired join start time
+#join_end = datetime(2023, 7, 28, 18, 0, 0)    # Replace with your desired join end time
+#event_start = datetime(2023, 8, 1, 10, 0, 0)  # Replace with your desired event start time
+#event_end = datetime(2023, 8, 1, 18, 0, 0)    # Replace with your desired event end time
+#helpers.phase.create_phase(join_start, join_end, event_start, event_end, p.project_id)
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5052, debug=True)
