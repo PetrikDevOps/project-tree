@@ -1,10 +1,11 @@
 import importlib
 import os
 
-from flask import Flask, render_template, jsonify, request, session, send_file
+from flask import Flask, render_template, jsonify, request, session, send_file, redirect
 from flask_cors import CORS
 from flask_session import Session
 from werkzeug.middleware.proxy_fix import ProxyFix
+from functools import wraps
 
 import config
 import helpers
@@ -27,7 +28,16 @@ Session(app)
 # Fixes some stuff when running on localhost
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
+def login_required(func):
+    @wraps(func)
+    def login_wrapper(*args, **kwargs):
+        if 'user_id' not in session:
+            return "Unauthorized", 401
+        return func(*args, **kwargs)
+    return login_wrapper
+
 @app.route('/chPhase', methods=['POST'])
+@login_required
 def change_phase():
     phase = request.get_json()
     if phase is not None:
@@ -78,7 +88,9 @@ def get_phase():
     else:
         return jsonify({"error": "Project ID parameter is missing"}), 400
 
+
 @app.route('/getProjectStats', methods=['GET'])
+@login_required
 def get_projects():
     parsed = []
     for project in helpers.project.get_all_projects():
@@ -98,6 +110,7 @@ def get_projects():
 
 
 @app.route('/getAllEggs', methods=['GET'])
+@login_required
 def get_eggs():
     parsed = []
     for egg in helpers.egg.get_all_eggs():
@@ -127,6 +140,7 @@ def get_egg(egg_id):
 
 
 @app.route('/chEgg', methods=['POST'])
+@login_required
 def change_egg():
     data = request.get_json()
     oegg = helpers.egg.get_egg_by_id(data.get('egg_id'))
@@ -145,6 +159,7 @@ def change_egg():
 
 
 @app.route('/genEggQR/<egg_id>', methods=['GET'])
+@login_required
 def get_egg_qr(egg_id):
     img = helpers.egg.create_qr_img(egg_id)
     if not img:
@@ -174,6 +189,7 @@ def get_design(project_id):
     return jsonify(parsed)
 
 @app.route('/chDesign', methods=['POST'])
+@login_required
 def change_design():
     data = request.get_json()
     design = helpers.design.update_design(helpers.design.get_design_for_project(data.get('project_id')), data.get('header'), data.get('bg_img'), data.get('color1'), data.get('color2'), data.get('color3'))
