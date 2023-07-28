@@ -1,4 +1,5 @@
 from db import *
+from sqlalchemy import func
 
 # Create Points for a specific Task and Team
 def create_points(task_id, team_id, points, project_id):
@@ -32,3 +33,21 @@ def delete_points(task_id, team_id):
         session.commit()
         return True
     return False
+
+def get_team_total_points(team_id):
+    team_points = session.query(func.sum(Points.points)).filter_by(team_id=team_id).scalar()
+
+    if team_points is None:
+        return 0
+    else:
+        return team_points
+    
+def get_top_3_teams(project_id):
+    return session.query(Team.team_id, Team.team_name, func.sum(Points.points).label('total_points')) \
+            .join(Points, Team.team_id == Points.team_id) \
+            .filter(Team.project_id == project_id) \
+            .group_by(Team.team_id, Team.team_name) \
+            .order_by(func.sum(Points.points).desc()) \
+            .limit(3) \
+            .all()
+

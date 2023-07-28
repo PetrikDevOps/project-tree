@@ -1,16 +1,13 @@
 import importlib
 import os
 
-from flask import Flask, render_template, jsonify, request, session, redirect, url_for, flash
+from flask import Flask, render_template, jsonify, request, session, send_file
 from flask_cors import CORS
 from flask_session import Session
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 import config
 import helpers
-from helpers.phase import get_phase_for_project, update_phase
-
-from helpers.project import get_project_by_id
 
 helpers_dir = os.path.join(os.path.dirname(__file__), 'helpers')
 helper_files = os.listdir(helpers_dir)
@@ -30,21 +27,6 @@ Session(app)
 # Fixes some stuff when running on localhost
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-
-"""
-end point: " /chPhase "
-
-Server waiting for phase object ==>
-than saves it to the db
-{
-    "id": "{project_id}",
-    "join_start": "2021-04-01T00:00:00+02:00",
-    "join_end": "2021-04-30T23:59:59+02:00",
-    "event_start": "2021-05-01T00:00:00+02:00",
-    "event_end": "2021-05-31T23:59:59+02:00",
-}
-"""
-
 @app.route('/chPhase', methods=['POST'])
 def change_phase():
     phase = request.get_json()
@@ -52,10 +34,10 @@ def change_phase():
         try:
             project_id = int(phase['id'])
             #kellene egy adatbázis lekérdezés, hogy megkapjuk a projekt adatait a project_id alapján
-            project = get_project_by_id(project_id)
+            project = helpers.project.get_project_by_id(project_id)
             if project is not None:
                 #kellene egy adatbázis lekérdezés, hogy megkapjuk a projekt fázisát a project_id alapján
-                phase = get_phase_for_project(project_id)
+                phase = helpers.phase.get_phase_for_project(project_id)
                 if phase is not None:
                     phase.join_start = phase['join_start']
                     phase.join_end = phase['join_end']
@@ -78,9 +60,9 @@ def get_phase():
         try:
             project_id = int(project_id)
             #kellene egy adatbázis lekérdezés, hogy megkapjuk a projekt adatait a project_id alapján
-            project = get_project_by_id(project_id)
+            project = helpers.project.get_project_by_id(project_id)
             if project is not None:
-                phase = get_phase_for_project(project_id)
+                phase = helpers.project.get_phase_for_project(project_id)
     
                 return jsonify({
                     "id": project_id,
@@ -96,36 +78,26 @@ def get_phase():
     else:
         return jsonify({"error": "Project ID parameter is missing"}), 400
 
-@app.route('/login', methods=['GET'])
-def login():
-    session['logged_in'] = True
-    return jsonify({'message': 'Login successful!'})
-
-@app.route('/logout', methods=['GET'])
-def logout():
-    # Clear the 'logged_in' flag from the session
-    session.pop('logged_in', None)
-    return jsonify({'message': 'Logout successful!'})
-
-@app.route('/projects', methods=['GET'])
+@app.route('/getProjectStats', methods=['GET'])
 def get_projects():
     parsed = []
     for project in helpers.project.get_all_projects():
+        top3 = helpers.leaderboard.get_top3(project.project_id)
         project_data = {
             'project_id': project.project_id,
             'name': project.name,
             'state': helpers.phase.get_current_phase(project.project_id),
             'max_team_num': project.max_team_num,
             'current_team_num': len(project.teams),
-            'first': 'majd lesz valami',
-            'second': 'majd lesz valami',
-            'third': 'majd lesz valami',
+            'first': top3[0].team_name if len(top3) > 0 else None,
+            'second': top3[1].team_name if len(top3) > 1 else None,
+            'third': top3[2].team_name if len(top3) > 2 else None,
         }
         parsed.append(project_data)
     return jsonify({'projects': parsed})
 
 
-@app.route('/eggs', methods=['GET'])
+@app.route('/getAllEggs', methods=['GET'])
 def get_eggs():
     parsed = []
     for egg in helpers.egg.get_all_eggs():
@@ -138,18 +110,28 @@ def get_eggs():
         parsed.append(egg_data)
     return jsonify({'eggs': parsed})
 
+
 @app.route('/egg/<egg_id>', methods=['GET', 'POST'])
 def get_egg(egg_id):
     if request.method == 'GET':
         return "nem"
     elif request.method == 'POST':
-        team = helpers.team.get_team_by_val_code(request.form['val_code'])
+        data = request.get_json()
+        team = helpers.team.get_team_by_val_code(data.get('val_code'))
         if not team:
             return "Code error"
         if not helpers.egg.check_egg_valid(egg_id):
             return "Egg not valid"
         helpers.egg.team_found_egg(team.team_id, egg_id)
-    
+
+
+@app.route('/genEggQR/<egg_id>', methods=['GET'])
+def get_egg_qr(egg_id):
+    img = helpers.egg.create_qr_img(egg_id)
+    if not img:
+        return "Not a valid egg id"
+    return send_file(img, mimetype='image/png')
+
 
 
 
