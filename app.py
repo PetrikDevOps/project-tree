@@ -79,18 +79,6 @@ def change_phase():
             return jsonify({"error": "Invalid Project ID"}), 400
 
 
-"""
-end point: " /chGeneral "
-
-Server waiting ==>
-
-{
-    "id": 1,
-    "title": "Project title",
-    "max_team_num": 5,
-    "num_of_members": 3,
-}
-"""
 
 @app.route('/chGeneral', methods=['POST'])
 def change_general():
