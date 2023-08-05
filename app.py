@@ -1,10 +1,11 @@
 import importlib
 import os
 
-from flask import Flask, render_template, jsonify, request, session, send_file
+from flask import Flask, render_template, jsonify, request, session, send_file, redirect
 from flask_cors import CORS
 from flask_session import Session
 from werkzeug.middleware.proxy_fix import ProxyFix
+from functools import wraps
 
 import config
 import helpers
@@ -27,6 +28,13 @@ Session(app)
 # Fixes some stuff when running on localhost
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
+def login_required(func):
+    @wraps(func)
+    def login_wrapper(*args, **kwargs):
+        if 'user_id' not in session:
+            return "Unauthorized", 401
+        return func(*args, **kwargs)
+    return login_wrapper
 
 @app.route('/getPhase', methods=['GET'])
 def get_phase():
@@ -54,6 +62,7 @@ def get_phase():
         return jsonify({"error": "Project ID parameter is missing"}), 400
 
 @app.route('/chPhase', methods=['POST'])
+@login_required
 def change_phase():
     phase = request.get_json()
     if phase is not None:
@@ -77,20 +86,6 @@ def change_phase():
                 return jsonify({"error": "Project ID not found"}), 404
         except ValueError:
             return jsonify({"error": "Invalid Project ID"}), 400
-
-
-"""
-end point: " /getGeneral "
-
-Server sending ==>
-
-{
-    "id": 1,
-    "title": "Project title",
-    "max_team_num": 5,
-    "num_of_members": 3,
-}
-"""
 
 @app.route('/getGeneral', methods=['GET'])
 def get_general():
@@ -160,9 +155,10 @@ def change_joining():
                 return jsonify({"error": "Project ID not found"}), 404
         except ValueError:
             return jsonify({"error": "Invalid Project ID"}), 400
-
+          
 
 @app.route('/getProjectStats', methods=['GET'])
+@login_required
 def get_projects():
     parsed = []
     for project in helpers.project.get_all_projects():
@@ -182,6 +178,7 @@ def get_projects():
 
 
 @app.route('/getAllEggs', methods=['GET'])
+@login_required
 def get_eggs():
     parsed = []
     for egg in helpers.egg.get_all_eggs():
@@ -211,6 +208,7 @@ def get_egg(egg_id):
 
 
 @app.route('/chEgg', methods=['POST'])
+@login_required
 def change_egg():
     data = request.get_json()
     oegg = helpers.egg.get_egg_by_id(data.get('egg_id'))
@@ -229,6 +227,7 @@ def change_egg():
 
 
 @app.route('/genEggQR/<egg_id>', methods=['GET'])
+@login_required
 def get_egg_qr(egg_id):
     img = helpers.egg.create_qr_img(egg_id)
     if not img:
@@ -258,6 +257,7 @@ def get_design(project_id):
     return jsonify(parsed)
 
 @app.route('/chDesign', methods=['POST'])
+@login_required
 def change_design():
     data = request.get_json()
     design = helpers.design.update_design(helpers.design.get_design_for_project(data.get('project_id')), data.get('header'), data.get('bg_img'), data.get('color1'), data.get('color2'), data.get('color3'))
@@ -270,6 +270,35 @@ def change_design():
             'color2': design.base_color2,
             'color3': design.base_color3,
         }
+
+@app.route('/getTeams/<project_id>', methods=['GET'])
+def get_teams(project_id):
+    teams = helpers.team.get_all_teams_in_project(project_id)
+    parsed = []
+    for team in teams:
+        parsed.append({
+            'team_name': team.team_name,
+            'id': team.team_id,
+            'color': team.color
+        })
+    return jsonify({'teams': parsed})
+
+@app.route('/getTasks/<project_id>', methods=['GET'])
+def get_tasks(project_id):
+    tasks = helpers.task.get_all_tasks_for_project(project_id)
+    parsed = []
+    for task in tasks:
+        parsed.append({
+            'task_id': task.task_id,
+            'task_name': task.task_name,
+            'task_max_points': task.task_max_points,
+            'task_type': task.task_type,
+            'task_start': task.task_start,
+            'task_end': task.task_end,
+        })
+    return jsonify({'tasks': parsed})
+
+
 
 #p = helpers.project.create_project('test', 10, 5, 'https://google.com')
 #from datetime import datetime
