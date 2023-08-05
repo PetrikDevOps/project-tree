@@ -215,6 +215,23 @@ def get_teams(project_id):
         })
     return jsonify({'teams': parsed})
 
+@app.route('/getTasks/<project_id>', methods=['GET'])
+def get_tasks(project_id):
+    tasks = helpers.task.get_all_tasks_for_project(project_id)
+    parsed = []
+    for task in tasks:
+        parsed.append({
+            'task_id': task.task_id,
+            'task_name': task.task_name,
+            'task_max_points': task.task_max_points,
+            'task_type': task.task_type,
+            'task_start': task.task_start,
+            'task_end': task.task_end,
+        })
+    return jsonify({'tasks': parsed})
+
+
+
 #p = helpers.project.create_project('test', 10, 5, 'https://google.com')
 #from datetime import datetime
 #join_start = datetime(2023, 7, 28, 8, 0, 0)   # Replace with your desired join start time
