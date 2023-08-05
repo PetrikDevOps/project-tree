@@ -36,6 +36,31 @@ def login_required(func):
         return func(*args, **kwargs)
     return login_wrapper
 
+@app.route('/getPhase', methods=['GET'])
+def get_phase():
+    project_id = request.args.get('id')
+    if project_id is not None:
+        try:
+            project_id = int(project_id)
+            #kellene egy adatbázis lekérdezés, hogy megkapjuk a projekt adatait a project_id alapján
+            project = helpers.project.get_project_by_id(project_id)
+            if project is not None:
+                phase = helpers.project.get_phase_for_project(project_id)
+    
+                return jsonify({
+                    "id": project_id,
+                    "join_start": phase.join_start,
+                    "join_end": phase.join_end,
+                    "event_start": phase.event_start,
+                    "event_end": phase.event_end,
+                }), 200
+            else:
+                return jsonify({"error": "Project ID not found"}), 404
+        except ValueError:
+            return jsonify({"error": "Invalid Project ID"}), 400
+    else:
+        return jsonify({"error": "Project ID parameter is missing"}), 400
+
 @app.route('/chPhase', methods=['POST'])
 @login_required
 def change_phase():
@@ -62,9 +87,8 @@ def change_phase():
         except ValueError:
             return jsonify({"error": "Invalid Project ID"}), 400
 
-
-@app.route('/getPhase', methods=['GET'])
-def get_phase():
+@app.route('/getGeneral', methods=['GET'])
+def get_general():
     project_id = request.args.get('id')
     if project_id is not None:
         try:
@@ -72,15 +96,35 @@ def get_phase():
             #kellene egy adatbázis lekérdezés, hogy megkapjuk a projekt adatait a project_id alapján
             project = helpers.project.get_project_by_id(project_id)
             if project is not None:
-                phase = helpers.project.get_phase_for_project(project_id)
-    
                 return jsonify({
                     "id": project_id,
-                    "join_start": phase.join_start,
-                    "join_end": phase.join_end,
-                    "event_start": phase.event_start,
-                    "event_end": phase.event_end,
+                    "name": project.name,
+                    "max_team_num": project.max_team_num,
+                    "num_of_members": project.num_of_members,
                 }), 200
+            else:
+                return jsonify({"error": "Project ID not found"}), 404
+        except ValueError:
+            return jsonify({"error": "Invalid Project ID"}), 400
+
+@app.route('/getJoining', methods=['GET'])
+def get_joining():
+    project_id = request.args.get('id')
+    if project_id is not None:
+        try:
+            project_id = int(project_id)
+            #kellene egy adatbázis lekérdezés, hogy megkapjuk a projekt adatait a project_id alapján
+            project = helpers.project.get_project_by_id(project_id)
+            if project is not None:
+                joining_page = helpers.joining.get_joining_page_for_project(project_id)
+                if joining_page is not None:
+                    return jsonify({
+                        "title": joining_page.title,
+                        "body": joining_page.body,
+                        "footer": joining_page.footer,
+                    }), 200
+                else:
+                    return jsonify({"error": "Page not found"}), 404
             else:
                 return jsonify({"error": "Project ID not found"}), 404
         except ValueError:
@@ -88,6 +132,30 @@ def get_phase():
     else:
         return jsonify({"error": "Project ID parameter is missing"}), 400
 
+@app.route('/chJoining', methods=['POST'])
+def change_joining():
+    page = request.get_json()
+    if page is not None:
+        try:
+            project_id = int(page['id'])
+            #kellene egy adatbázis lekérdezés, hogy megkapjuk a projekt adatait a project_id alapján
+            project = helpers.project.get_project_by_id(project_id)
+            if project is not None:
+                #kellene egy adatbázis lekérdezés, hogy megkapjuk a projekt csatlakozási oldalát a project_id alapján
+                joining_page = helpers.joining.get_joining_page_for_project(project_id)
+                if joining_page is not None:
+                    joining_page.title = page['title']
+                    joining_page.body = page['body']
+                    joining_page.footer = page['footer']
+                    helpers.joining.update_joining_page(joining_id=joining_page.joining_id, title=joining_page.title, body=joining_page.body, footer=joining_page.footer)
+                    return jsonify({"message": "Page updated"}), 200,
+                else:
+                    return jsonify({"error": "Page not found"}), 404
+            else:
+                return jsonify({"error": "Project ID not found"}), 404
+        except ValueError:
+            return jsonify({"error": "Invalid Project ID"}), 400
+          
 
 @app.route('/getProjectStats', methods=['GET'])
 @login_required
